@@ -1,6 +1,6 @@
 import express from "express"
 import { upload } from "../config/multer.js"
-import { actualizar, borrarProducto, crearProducto, obtenerporTipo, obtenerProductos } from "../controllers/productos.controller.js"
+import { actualizar, borrarProducto, crearProducto, obtenerImagenes, obtenerporTipo, obtenerProductos } from "../controllers/productos.controller.js"
 
 const router = express.Router();
 
@@ -14,6 +14,8 @@ router.put('/actualizar/:id', actualizar)
 router.delete('/borrarProducto/:id', borrarProducto)
 //localhost:4000/api/productos/obtenerProductosPorTipo/extra
 router.get('/obtenerProductosPorTipo/:tipo', obtenerporTipo)
+
+router.get('/obtenerImagenes', obtenerImagenes)
 
 
 

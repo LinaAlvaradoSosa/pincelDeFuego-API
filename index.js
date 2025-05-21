@@ -15,9 +15,6 @@ app.use('/uploads', express.static('uploads')); // para ver imágenes en navegad
 app.use('/api/productos', productos);
 
 
-
-
-
 app.listen(4000, () =>{
     console.log('servicio corriendo en el puerto 4000');
     
