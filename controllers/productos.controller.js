@@ -116,19 +116,18 @@ export async function obtenerporTipo (req, res) {
     try {
         const { tipo } = req.params; 
 
-        const validarTipo = ["retratos", "animales", "textos-biblicos-románticos", "objetos-decorativos-utilitarios", "notas-de-estilo","llaveros-imagenes","trofeos-recordatorios","avisos","varios"];
+        const validarTipo = ['retratos', 'animales','paisajes', 'textos-biblicos-romanticos', 'objetos-decorativos-utilitarios', 'notas-de-estilo','llaveros-imagenes','trofeos-recordatorios','avisos','varios'];
         if (!validarTipo.includes(tipo)) {
             return res.status(400).json({ message: "Tipo de producto no válido" });
         }
-        const productos = await Productos.find({ tipo }); // Filtra por tipo
+        const productos = await Productos.find({ tipo }); 
         res.json(productos);
     } catch (error) {
         console.log(error.message);
-        res.status(500).json({ error: error.message }); // ✅ envía un JSON legible con el mensaje
+        res.status(500).json({ error: error.message }); 
 
     }
 }
-
 
 export async function obtenerImagenes(req, res) {
     try {
