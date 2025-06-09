@@ -77,10 +77,10 @@ export async function actualizar (req, res) {
 
 export async function guardarMensaje(req, res) {
     try {
-        const { nombre, correo, mensaje, celular} = req.body;
+        const { nombre, correo, mensaje, celular, tipo} = req.body;
         if (!nombre || !correo || !mensaje) return res.status(400).json({error: "Nombre, correo y mensaje son requeridos"})
         
-        const nuevoMensaje = new Mensaje({ nombre, correo, mensaje, celular})
+        const nuevoMensaje = new Mensaje({ nombre, correo, mensaje, celular, tipo})
         await nuevoMensaje.save();
         res.status(201).json({message: "mensaje guardado con exito!"})
     } catch (error) {

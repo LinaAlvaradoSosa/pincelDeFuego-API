@@ -1,14 +1,14 @@
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
-import path from 'path';
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads');
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'trazos-de-fuego',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [{ width: 800, height: 800, crop: 'limit' }]
     },
-    filename: function (req, file, cb) {
-        const nombreUnico = Date.now() + '-' + file.originalname;
-        cb(null, nombreUnico);
-    }
 });
 
 export const upload = multer({ storage });

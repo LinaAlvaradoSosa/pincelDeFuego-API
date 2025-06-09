@@ -1,64 +1,114 @@
 import Productos from '../models/productos.model.js';
+import { cloudinary } from '../config/cloudinary.js';
+import fs from 'fs'
 
 export async function crearProducto(req, res) {
     try {
         const { nombre, descripcion, tipo } = req.body;
-        const imagen = req.file ? req.file.filename : '';
-
+        if (!nombre || !descripcion || !tipo) {
+            return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+        }
+        let imagen = '';
+        let public_id = '';
+        if (req.file) {
+            try {
+                const resultado = await cloudinary.uploader.upload(req.file.path);
+                imagen = resultado.secure_url;
+                public_id = resultado.public_id;
+            } catch (uploadError) {
+                console.error('Error al subir a Cloudinary:', uploadError);
+                return res.status(500).json({ error: 'Error al subir imagen a Cloudinary' });
+            }
+        } else {
+            console.log('⚠️ No se recibió archivo para subir');
+        }
         const nuevo = new Productos({
             nombre,
             descripcion,
             tipo,
-            imagen
-    });
-    await nuevo.save();
-    res.send('Producto creado correctamente');
-} catch (error) {
-    console.log(error.message);
-    res.status(500).send('Error al crear producto');
-}
+            imagen,
+            public_id
+        });
+        await nuevo.save();
+        res.status(200).json({
+            mensaje: 'Producto creado correctamente',
+            producto: nuevo
+        });
+        console.log('Producto creado en crearProducto:');
+    } catch (error) {
+        console.error('Error en crearProducto:', error);
+        res.status(500).json({ error: 'Error al crear producto' });
+    }
 }
 
 export async function obtenerProductos(req, res) {
     try {
         const productos = await Productos.find();
-        const productosUrl = productos.map(producto => ({
-            ...producto._doc,
-            imagen: `http://localhost:4000/uploads/${producto.imagen.replace(/^uploads\//, '')}`
-        }))
-        res.json(productosUrl);
-} catch (error) {
-    res.status(500).send('Error al obtener productos');
-}
-}
-
-export async function actualizar (req, res) {
-    try {
-        const data = req.body;
-        const { id } = req.params
-        
-        const buscarProducto = await Productos.findById({_id:id})
-        if (!buscarProducto) return res.send('El producto no existe')
-        
-        const actualizar = await Productos.findByIdAndUpdate(id, data);
-        res.status(201).json({ok:true, actualizar})
+        res.json(productos);
     } catch (error) {
-        console.log(error.message);
-        res.status(500).send({error:'Error al actualizar el producto, comuniquese con el admin'})
+        res.status(500).json({ error: error.message }); 
     }
 }
 
-export async function borrarProducto(req, res) {
-    const { id } = req.params
+export async function obteneProducto (req, res) {
     try {
-        const buscarProducto = await Productos.findById({_id:id})
-        if (!buscarProducto) return res.send('Producto no encontrado');
-
-        const borrarProducto = await Productos.findByIdAndDelete({_id: id})
-        res.status(201).json({ok:true, borrarProducto})
+        const { id } = req.params;
+        const product = await Productos.findById({_id:id});
+        if(!product) return res.send('The product does not exist');
+        res.status(201).json({ok:true, product})  
     } catch (error) {
         console.log(error.message);
-        res.status(500).send({error: "Error al borrar el producto, comunicate con el Admin"})
+        res.status(500).json({ error: error.message });
+
+    }
+}
+export async function actualizar(req, res) {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion, tipo } = req.body;
+    
+        const producto = await Productos.findById(id);
+        if (!producto) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    if (req.file) {
+        console.log('📦 Nueva imagen recibida:', req.file);
+        const resultado = await cloudinary.uploader.upload(req.file.path);
+        console.log('☁️ Imagen subida:', resultado);
+        if (producto.public_id) {
+            await cloudinary.uploader.destroy(producto.public_id);
+            console.log('🗑️ Imagen anterior eliminada');
+        }
+        producto.imagen = resultado.secure_url;
+        producto.public_id = resultado.public_id;
+        fs.unlinkSync(req.file.path);
+    }
+        producto.nombre = nombre || producto.nombre;
+        producto.descripcion = descripcion || producto.descripcion;
+        producto.tipo = tipo || producto.tipo;
+        await producto.save();
+        res.status(200).json({ mensaje: 'Producto actualizado correctamente', producto });
+    } catch (error) {
+        console.error('❌ Error al actualizar producto:', error);
+        res.status(500).json({ error: 'Error al actualizar producto' });
+    }
+}
+export async function borrarProducto (req, res) {
+    try {
+        const { id } = req.params;
+        const producto = await Productos.findById(id);
+        if (!producto) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        if (producto.public_id) {
+            await cloudinary.uploader.destroy(producto.public_id);
+            console.log('☁️ Imagen eliminada de Cloudinary');
+        }
+        await Productos.findByIdAndDelete(id);
+        res.status(200).json({ mensaje: 'Producto eliminado correctamente' });
+        } catch (error) {
+        console.error('Error al eliminar producto:', error);
+        res.status(500).json({ error: 'Error al eliminar producto' });
     }
 }
 
@@ -66,7 +116,7 @@ export async function obtenerporTipo (req, res) {
     try {
         const { tipo } = req.params; 
 
-        const validarTipo = ["cuadernos", "retratos", "accesorios", "extra"];
+        const validarTipo = ["retratos", "animales", "textos-biblicos-románticos", "objetos-decorativos-utilitarios", "notas-de-estilo","llaveros-imagenes","trofeos-recordatorios","avisos","varios"];
         if (!validarTipo.includes(tipo)) {
             return res.status(400).json({ message: "Tipo de producto no válido" });
         }
@@ -74,20 +124,38 @@ export async function obtenerporTipo (req, res) {
         res.json(productos);
     } catch (error) {
         console.log(error.message);
-        res.status(500).json({ message: "Error al obtener productos", error });
+        res.status(500).json({ error: error.message }); // ✅ envía un JSON legible con el mensaje
+
     }
 }
+
 
 export async function obtenerImagenes(req, res) {
     try {
         const productos = await Productos.find({}, 'imagen');
-        const imagenes = productos.map(p => `${req.protocol}://${req.get('host')}/uploads/${p.imagen}`);
-        
-        res.status(200).json({imagenes})
+        const imagenes = productos.map(p => p.imagen); // Ahora directamente Cloudinary URLs
+        res.status(200).json({ imagenes });
     } catch (error) {
-        console.log('Error al obtener las imagenes');
-        res.status(500).json({mensaje: 'Error en el servidor' })
-        
+        console.log(error.message);
+        res.status(500).json({ error: error.message }); 
+
     }
-    
 }
+export const obteneProductoNombre = async (req, res) => {
+    try {
+        const buscar = req.params.nombre || req.query.nombre;
+
+        if (buscar) {
+            const data = await Productos.find({
+                nombre: { $regex: buscar, $options: 'i' }
+            });
+            res.status(200).json(data);
+        } else {
+            const dataProducts = await Productos.find();
+            res.status(200).json(dataProducts);
+        }
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({ error:   error.message  }); // ✅ envía un JSON legible con el mensaje
+    }
+};

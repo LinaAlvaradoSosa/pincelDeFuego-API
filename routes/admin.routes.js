@@ -13,7 +13,7 @@ router.put('/actualizar/:id', actualizar)
 
 // rutas de mensaje de contacto
 
-router.post('/numeroMensaje', guardarMensaje)
+router.post('/nuevoMensaje', guardarMensaje)
 router.get('/mostrarMensajes', mostrarMensajes)
 router.delete('/borrarMensaje/:id', borrarMensaje)
 

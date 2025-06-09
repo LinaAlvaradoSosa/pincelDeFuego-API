@@ -15,6 +15,9 @@ const ContactSchema = new mongoose.Schema ({
     },
     celular: {
         type: String
+    },
+    tipo: {
+        type: String
     }
 }, { versionKey: false});
 
