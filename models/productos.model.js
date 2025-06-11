@@ -6,7 +6,8 @@ const ProductosSchema = new mongoose.Schema({
         required: true
     },
     imagen: {
-        type: String
+        type: String, 
+        required: true
     },
     public_id: { 
         type: String

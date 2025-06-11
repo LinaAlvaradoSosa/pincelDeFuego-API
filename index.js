@@ -18,7 +18,7 @@ app.use('/api', admin)
 app.use('/api/productos', productos);
 
 app.use((err, req, res, next) => {
-    console.error('❗ Middleware error handler:', err);
+    console.error('Middleware error handler:', err);
     res.status(500).json({ error: err.message || 'Error desconocido en el servidor' });
 });
 

@@ -1,9 +1,8 @@
 import express from "express"
-import multer from 'multer';
+import upload from '../middleware/multer.js';
 import { actualizar, borrarProducto, crearProducto, obteneProducto, obteneProductoNombre, obtenerImagenes, obtenerporTipo, obtenerProductos } from "../controllers/productos.controller.js"
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' }); // ruta temporal
 
 
 

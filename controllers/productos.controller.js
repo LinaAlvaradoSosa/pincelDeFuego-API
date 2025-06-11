@@ -1,43 +1,32 @@
 import Productos from '../models/productos.model.js';
+import cloudinary from '../utils/cloudinary.js'
+import { uploadToCloudinary } from '../utils/uploadToCloudinary.js';
 
-export async function crearProducto(req, res) {
+export const crearProducto = async (req, res) => {
     try {
         const { nombre, descripcion, tipo } = req.body;
-
-        if (!nombre || !descripcion || !tipo) {
-            return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    
+        if (!req.file) {
+            return res.status(400).json({ error: 'Imagen requerida' });
         }
-
-        let imagen = '';
-        let public_id = '';
-
-        if (req.file) {
-            imagen = req.file.path;        
-            public_id = req.file.filename; 
-        } else {
-            console.log('⚠️ No se recibió archivo para subir');
-        }
-
-        const nuevo = new Productos({
+    
+        const buffer = req.file.buffer;
+    
+        const resultado = await uploadToCloudinary(buffer, 'productos');
+        const nuevoProducto = new Productos({
             nombre,
-            descripcion,
             tipo,
-            imagen,
-            public_id
+            descripcion,
+            imagen: resultado.secure_url,
         });
-
-        await nuevo.save();
-
-        res.status(200).json({
-            mensaje: 'Producto creado correctamente',
-            producto: nuevo
-        });
-
+        await nuevoProducto.save();
+    
+        res.status(201).json(nuevoProducto);
     } catch (error) {
-        console.error('❌ Error en crearProducto:', error);
-        res.status(500).json({ error: 'Error al crear producto' });
+        console.error(error);
+        res.status(500).json({ error: 'Error al crear el producto' });
     }
-}
+};
 export async function obtenerProductos(req, res) {
     try {
         const productos = await Productos.find();
