@@ -1,27 +1,23 @@
 import Productos from '../models/productos.model.js';
-import { cloudinary } from '../config/cloudinary.js';
-import fs from 'fs'
 
 export async function crearProducto(req, res) {
     try {
         const { nombre, descripcion, tipo } = req.body;
+
         if (!nombre || !descripcion || !tipo) {
             return res.status(400).json({ error: 'Todos los campos son obligatorios' });
         }
+
         let imagen = '';
         let public_id = '';
+
         if (req.file) {
-            try {
-                const resultado = await cloudinary.uploader.upload(req.file.path);
-                imagen = resultado.secure_url;
-                public_id = resultado.public_id;
-            } catch (uploadError) {
-                console.error('Error al subir a Cloudinary:', uploadError);
-                return res.status(500).json({ error: 'Error al subir imagen a Cloudinary' });
-            }
+            imagen = req.file.path;        
+            public_id = req.file.filename; 
         } else {
             console.log('⚠️ No se recibió archivo para subir');
         }
+
         const nuevo = new Productos({
             nombre,
             descripcion,
@@ -29,18 +25,19 @@ export async function crearProducto(req, res) {
             imagen,
             public_id
         });
+
         await nuevo.save();
+
         res.status(200).json({
             mensaje: 'Producto creado correctamente',
             producto: nuevo
         });
-        console.log('Producto creado en crearProducto:');
+
     } catch (error) {
-        console.error('Error en crearProducto:', error);
+        console.error('❌ Error en crearProducto:', error);
         res.status(500).json({ error: 'Error al crear producto' });
     }
 }
-
 export async function obtenerProductos(req, res) {
     try {
         const productos = await Productos.find();
@@ -102,7 +99,7 @@ export async function borrarProducto (req, res) {
         }
         if (producto.public_id) {
             await cloudinary.uploader.destroy(producto.public_id);
-            console.log('☁️ Imagen eliminada de Cloudinary');
+            console.log('Imagen eliminada de Cloudinary');
         }
         await Productos.findByIdAndDelete(id);
         res.status(200).json({ mensaje: 'Producto eliminado correctamente' });
@@ -155,6 +152,6 @@ export const obteneProductoNombre = async (req, res) => {
         }
     } catch (error) {
         console.log(error.message);
-        res.status(500).json({ error:   error.message  }); // ✅ envía un JSON legible con el mensaje
+        res.status(500).json({ error:   error.message  }); 
     }
 };
